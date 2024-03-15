@@ -1,0 +1,38 @@
+name: Portainer Redeploy
+permissions: write-all
+
+on:
+  workflow_call:
+    inputs:
+      apiUrl:
+        required: true
+        type: string
+      serviceId:
+        required: true
+        type: string
+      endpointId:
+        required: true
+        type: string
+    secrets:
+      token:
+        required: true
+
+jobs:
+  redeploy:
+    name: Portainer Redeploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Portainer API
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: ${{ inputs.apiUrl }}/stacks/${{ inputs.serviceId }}/git/redeploy?endpointId=${{ inputs.endpointId }}
+          method: "PUT"
+          customHeaders: |
+            {
+              "X-API-KEY": "${{ secrets.token }}"
+            }
+          data: |
+            {
+              "pullImage": true
+            }
+          timeout: 300000
