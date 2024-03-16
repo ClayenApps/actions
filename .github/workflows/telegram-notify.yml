@@ -1,0 +1,60 @@
+name: Telegram Notify
+
+on:
+  workflow_call:
+    inputs:
+      message:
+        required: true
+        type: string
+      additional_buttons:
+        required: false
+        type: string
+        default: "[]"
+    secrets:
+      chat_id:
+        required: true
+      token:
+        required: true
+
+jobs:
+  notify:
+    name: Telegram Notify
+    runs-on: ubuntu-latest
+
+    env:
+      repositoryBtn: |
+        {
+            "text": "Repository",
+            "url": "${{github.server_url}}/${{ github.repository }}"
+        }
+      workflowBtn: |
+        {
+          "text": "Workflow",
+          "url": "${{github.server_url}}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        }
+
+    steps:
+      - name: Escape message
+        id: escape
+        env:
+          message: ${{ inputs.message }}
+        run: echo "message=${message//$'\n'/\\n}" >> "$GITHUB_OUTPUT"
+
+      - name: Send telegram message
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: https://api.telegram.org/bot${{ secrets.token }}/sendMessage
+          method: "POST"
+          data: |
+            {
+              "chat_id": "${{ secrets.chat_id }}",
+              "text": "${{ steps.escape.outputs.message }}",
+              "reply_markup": {
+                  "inline_keyboard": [
+                    [${{ env.repositoryBtn }}, ${{ env.workflowBtn }}],
+                    ${{ inputs.additional_buttons }}
+                  ]
+              },
+              "parse_mode": "MarkdownV2",
+              "link_preview_options": { "is_disabled": true }
+            }
