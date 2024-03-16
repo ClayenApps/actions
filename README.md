@@ -18,7 +18,7 @@ jobs:
 
 ## Portainer Redeploy
 
-Calls Portainer instance to redeploy stack.
+Calls Portainer instance to redeploy stack via git.
 
 ```yml
 // ...
@@ -30,4 +30,23 @@ jobs:
       apiUrl: 'https://example.com/portainer/api'
       serviceId: ${{ vars.PORTAINER_SERVICE_ID }}
       endpointId: ${{ vars.PORTAINER_ENDPOINT_ID }}
+```
+
+## Portainer Update
+
+Calls Portainer instance to update stack via compose file.
+
+```yml
+// ...
+jobs:
+  portainer:
+    name: Deploy to Portainer
+    uses: ClayenApps/actions/.github/workflows/portainer-update.yml@main
+    with:
+      apiUrl: 'https://example.com/portainer/api'
+      serviceId: ${{ vars.PORTAINER_SERVICE_ID }}
+      endpointId: ${{ vars.PORTAINER_ENDPOINT_ID }}
+      composePath: my-compose-file.yml # Optional
+    secrets:
+      token: ${{ secrets.PORTAINER_TOKEN }}
 ```

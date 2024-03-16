@@ -1,0 +1,54 @@
+name: Portainer Update
+permissions: write-all
+
+on:
+  workflow_call:
+    inputs:
+      apiUrl:
+        required: true
+        type: string
+      serviceId:
+        required: true
+        type: string
+      endpointId:
+        required: true
+        type: string
+      composePath:
+        required: false
+        default: docker-compose.yml
+        type: string
+    secrets:
+      token:
+        required: true
+
+jobs:
+  Update:
+    name: Portainer Update
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Compose file
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: ${{ inputs.composePath }}
+          sparse-checkout-cone-mode: false
+
+      - name: Escape Compose file
+        id: escape
+        run: echo "compose=$(jq -R -s '.' < ${{ inputs.composePath }})" >> "$GITHUB_OUTPUT"
+
+      - name: Call Portainer API
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: ${{ inputs.apiUrl }}/stacks/${{ inputs.serviceId }}?endpointId=${{ inputs.endpointId }}
+          method: "PUT"
+          customHeaders: |
+            {
+              "X-API-KEY": "${{ secrets.token }}"
+            }
+          data: |
+            {
+              "prune": false,
+              "pullImage": true,
+              "stackFileContent": ${{ steps.escape.outputs.compose }}
+            }
+          timeout: 60000
