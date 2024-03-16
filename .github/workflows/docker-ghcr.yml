@@ -5,11 +5,12 @@ on:
   workflow_dispatch:
     inputs:
       service:
+        required: false
         type: string
   workflow_call:
     inputs:
       service:
-        required: true
+        required: false
         type: string
 
 jobs:
@@ -39,12 +40,12 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         env:
-          NAME: ${{ env.GITHUB_REPOSITORY }}-${{ inputs.service }}
+          NAME: ${{inputs.service == '' && env.GITHUB_REPOSITORY || format('{0}-{1}', env.GITHUB_REPOSITORY, inputs.service) }}
           AT_ROOT: "{{defaultContext}}"
           WITH_SUBFOLDER: "{{defaultContext}}:${{ inputs.service }}"
         with:
           context: ${{inputs.service == '' && env.AT_ROOT || env.WITH_SUBFOLDER }}
-          push: true
           tags: ghcr.io/${{ env.NAME }}:latest
+          push: true
           cache-from: type=gha,scope=${{ env.NAME }}
           cache-to: type=gha,mode=max,scope=${{ env.NAME }}
